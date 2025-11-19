@@ -1,0 +1,18 @@
+name: Notify dependents
+
+on:
+  push:
+    paths:
+      - 'pom.xml'
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger model-service release
+        run: |
+          curl -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{"event_type": "lib-version-updated"}' \
+          https://api.github.com/repos/doda25-team10/model-service/dispatches
