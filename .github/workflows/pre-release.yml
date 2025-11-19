@@ -29,8 +29,8 @@ jobs:
           java-version: '25'
           distribution: 'temurin'
           server-id: github
-          server-username: GITHUB_ACTOR
-          server-password: ${{ secrets.GITHUB_TOKEN }}
+          server-username: ${{ secrets.PAT_USERNAME }}
+          server-password: ${{ secrets.PAT_FOR_PUSH }}
 
       - name: Calculate Pre-Release Version
         id: version
