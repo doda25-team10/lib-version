@@ -21,7 +21,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.PAT_FOR_PUSH }}
           fetch-depth: 0
 
       - name: Set up JDK 25
@@ -30,8 +29,8 @@ jobs:
           java-version: '25'
           distribution: 'temurin'
           server-id: github
-          server-username: GITHUB_ACTOR
-          server-password: ${{ secrets.PAT_FOR_PUSH }}
+          server-username: ${{ github.actor }}
+          server-password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Validate Version Format and Check Regression
         env:
@@ -89,7 +88,7 @@ jobs:
         run: mvn deploy
 
       - name: Push new commit and tag
-        run: git push https://${{ secrets.PAT_FOR_PUSH }}@github.com/${{ github.repository }} main --tags
+        run: git push https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} main --tags
 
       - name: Set next development version
         run: mvn versions:set -DnextSnapshot=true
@@ -98,4 +97,5 @@ jobs:
         run: |
           git add pom.xml
           git commit -m "chore(dev): Set next development snapshot version"
-          git push https://${{ secrets.PAT_FOR_PUSH }}@github.com/${{ github.repository }} main
+          # Using the standard HTTPS URL with GITHUB_TOKEN as the password
+          git push https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} main

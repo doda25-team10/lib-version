@@ -29,16 +29,16 @@ jobs:
           java-version: '25'
           distribution: 'temurin'
           server-id: github
-          server-username: ${{ secrets.PAT_USERNAME }}
-          server-password: ${{ secrets.PAT_FOR_PUSH }}
+          server-username: ${{ github.actor }}
+          server-password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Calculate Pre-Release Version
         id: version
         run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S) 
           BRANCH_NAME=$(echo ${{ github.ref_name }} | tr / - | tr _ - | tr '[:upper:]' '[:lower:]')
-          COMMIT_SHORT_SHA=${GITHUB_SHA::7}
           BASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's/-SNAPSHOT$//')
-          PRE_RELEASE_VERSION="${BASE_VERSION}-${BRANCH_NAME}-${COMMIT_SHORT_SHA}"
+          PRE_RELEASE_VERSION="${BASE_VERSION}-${BRANCH_NAME}-${TIMESTAMP}"
           echo "PRE_RELEASE_VERSION=$PRE_RELEASE_VERSION" >> $GITHUB_ENV
 
       - name: Set Pre-Release project version
