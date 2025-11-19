@@ -1,0 +1,101 @@
+name: Release Stable lib-version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version_to_release:
+        description: 'The new stable version'
+        required: true
+        type: string
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.PAT_FOR_PUSH }}
+          fetch-depth: 0
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+          server-id: github
+          server-username: GITHUB_ACTOR
+          server-password: ${{ secrets.PAT_FOR_PUSH }}
+
+      - name: Validate Version Format and Check Regression
+        env:
+          NEW_VERSION: ${{ inputs.version_to_release }}
+        run: |
+          # 1. Validate Input Format (Simple X.Y.Z)
+          if [[ ! "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Error: The version must be in the format X.Y.Z (e.g., 1.0.0) without a suffix."
+            exit 1
+          fi
+
+          # 2. Check Regression against latest tag
+          git fetch --tags
+          LATEST_TAG=$(git tag -l "v*" --sort='v:refname' | tail -n 1)
+
+          if [ -z "$LATEST_TAG" ]; then
+            echo "No previous stable tags found. Proceeding with first release."
+            exit 0
+          fi
+
+          LATEST_VERSION=${LATEST_TAG:1} 
+
+          echo "Latest released version: $LATEST_VERSION"
+          echo "Requested new version: $NEW_VERSION"
+
+          COMPARISON=$(echo -e "$LATEST_VERSION\n$NEW_VERSION" | sort -V | tail -n 1)
+          
+          if [ "$LATEST_VERSION" == "$NEW_VERSION" ]; then
+             echo "ERROR: The requested version $NEW_VERSION is identical to the latest released version $LATEST_VERSION."
+             exit 1
+          fi
+          
+          if [ "$COMPARISON" != "$NEW_VERSION" ]; then
+             echo "ERROR: The requested version $NEW_VERSION is not strictly greater than the latest released version $LATEST_VERSION."
+             exit 1
+          fi
+
+      - name: Set Git user for commits
+        run: |
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+
+      - name: Set project version in pom.xml (Stable Version)
+        run: mvn versions:set -DnewVersion=${{ inputs.version_to_release }}
+
+      - name: Commit version update
+        run: |
+          git add pom.xml
+          git commit -m "chore(release): Prepare stable release v${{ inputs.version_to_release }}"
+
+      - name: Tag the release commit
+        run: git tag v${{ inputs.version_to_release }}
+
+      - name: Build and Deploy Package
+        run: mvn deploy
+
+      - name: Push new commit and tag
+        run: git push https://${{ secrets.PAT_FOR_PUSH }}@github.com/${{ github.repository }} main --tags
+
+      - name: Set next development version
+        run: mvn versions:set -DnextSnapshot=true
+
+      - name: Commit next development version
+        run: |
+          git add pom.xml
+          git commit -m "chore(dev): Set next development snapshot version"
+          git push https://${{ secrets.PAT_FOR_PUSH }}@github.com/${{ github.repository }} main
