@@ -26,6 +26,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          token: ${{ secrets.PAT_FOR_PUSH }}
 
       - name: Set up JDK 25
         uses: actions/setup-java@v4
@@ -110,8 +111,8 @@ jobs:
       - name: Build and Deploy Package
         run: mvn deploy
 
-      - name: Push stable commit and tag (Requires PAT for protected branch)
-        run: git push https://github-actions:${{ secrets.PAT_FOR_PUSH }}@github.com/${{ github.repository }} main --tags
+      - name: Push stable commit and tag
+        run: git push origin main --tags
 
       - name: Set next development version
         run: mvn versions:set -DnewVersion=${{ env.NEXT_SNAPSHOT_VERSION }}
@@ -120,4 +121,4 @@ jobs:
         run: |
           git add pom.xml
           git commit -m "chore(dev): Set next development snapshot version"
-          git push https://github-actions:${{ secrets.PAT_FOR_PUSH }}@github.com/${{ github.repository }} main
+          git push origin main
