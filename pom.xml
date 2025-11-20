@@ -30,13 +30,17 @@
         </plugins>
     </build>
 
-
     <distributionManagement>
         <repository>
-            <id>github</id>
-            <name>GitHub Packages</name>
-            <url>https://maven.pkg.github.com/doda25-team10/lib-version</url>
+            <id>github-releases</id>
+            <name>GitHub Packages Releases</name>
+            <url>https://maven.pkg.github.com/doda25-team10/lib-version/releases</url>
         </repository>
+        <snapshotRepository>
+            <id>github-snapshots</id>
+            <name>GitHub Packages Snapshots</name>
+            <url>https://maven.pkg.github.com/doda25-team10/lib-version/snapshots</url>
+        </snapshotRepository>
     </distributionManagement>
 
 </project>
