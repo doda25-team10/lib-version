@@ -1,0 +1,52 @@
+name: Pre-Release lib-version
+
+on:
+  push:
+    branches:
+      - 'feat/**'
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+
+      - name: Create custom settings.xml for GitHub Packages
+        run: |
+          mkdir -p ~/.m2
+          echo "<settings xmlns=\"https://maven.apache.org/SETTINGS/1.0.0\" xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:schemaLocation=\"http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd\">" > ~/.m2/settings.xml
+          echo "  <servers>" >> ~/.m2/settings.xml
+          echo "    <server>" >> ~/.m2/settings.xml
+          echo "      <id>github-snapshots</id>" >> ~/.m2/settings.xml
+          echo "      <username>${{ github.actor }}</username>" >> ~/.m2/settings.xml
+          echo "      <password>${{ secrets.GITHUB_TOKEN }}</password>" >> ~/.m2/settings.xml
+          echo "    </server>" >> ~/.m2/settings.xml
+          echo "  </servers>" >> ~/.m2/settings.xml
+          echo "</settings>" >> ~/.m2/settings.xml
+
+      - name: Calculate Pre-Release Version
+        id: version
+        run: |
+          TIMESTAMP=$(date +%Y%m%d-%H%M%S) 
+          BRANCH_NAME=$(echo ${{ github.ref_name }} | tr / - | tr _ - | tr '[:upper:]' '[:lower:]')
+          BASE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout | sed 's/-SNAPSHOT$//')
+          PRE_RELEASE_VERSION="${BASE_VERSION}-${BRANCH_NAME}-${TIMESTAMP}-SNAPSHOT"
+          echo "PRE_RELEASE_VERSION=$PRE_RELEASE_VERSION" >> $GITHUB_ENV
+
+      - name: Set Pre-Release project version
+        run: mvn versions:set -DnewVersion=${{ env.PRE_RELEASE_VERSION }}
+
+      - name: Build and Deploy Pre-Release Package
+        run: mvn deploy
