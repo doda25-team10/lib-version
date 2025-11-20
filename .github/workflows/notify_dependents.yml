@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'pom.xml'
+    branches:
+      - main
 
 jobs:
   notify:
