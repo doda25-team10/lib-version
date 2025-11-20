@@ -96,7 +96,7 @@ jobs:
         run: mvn versions:set -DnewVersion=${{ env.NEW_STABLE_VERSION }}
 
       - name: Propagate Stable Version to version.properties
-        run: mvn validate
+        run: mvn process-resources
 
       - name: Commit version update
         run: |
