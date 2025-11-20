@@ -18,3 +18,10 @@ jobs:
           -H "Content-Type: application/json" \
           -d '{"event_type": "lib-version-updated"}' \
           https://api.github.com/repos/doda25-team10/model-service/dispatches
+      - name: Trigger app-service release
+        run: |
+          curl -X POST \
+          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{"event_type": "lib-version-updated"}' \
+          https://api.github.com/repos/doda25-team10/app-service/dispatches
