@@ -96,13 +96,9 @@ jobs:
       - name: Set project version in pom.xml (Stable Version)
         run: mvn versions:set -DnewVersion=${{ env.NEW_STABLE_VERSION }}
 
-      - name: Propagate Stable Version to version.properties
-        run: mvn process-resources
-
       - name: Commit version update
         run: |
-          cp target/classes/version.properties src/main/resources/version.properties
-          git add pom.xml src/main/resources/version.properties
+          git add pom.xml
           git commit -m "chore(release): Prepare stable release v${{ env.NEW_STABLE_VERSION }}"
 
       - name: Tag the release commit
